@@ -1,11 +1,84 @@
-import { Form, Input, DatePicker, Space, Button } from "antd";
+import {
+  Form,
+  Input,
+  DatePicker,
+  Space,
+  Button,
+  Alert,
+  notification,
+} from "antd";
 import { MinusCircleOutlined, PlusOutlined } from "@ant-design/icons";
 import styles from "../styles/Home.module.css";
+import moment from "moment";
+import axios from "axios";
+import { useState } from "react";
+import { AlertType } from "../config/event";
 const { RangePicker } = DatePicker;
 
+const URL = process.env.apiUrl || "";
+
 export default function Home() {
-  const onFinish = (values: any) => {
-    console.log("🐱 onFinish ~ values", values);
+  const [loading, setLoading] = useState<boolean>(false);
+
+  const openNotification = (type: AlertType, data?: any) => {
+    if (type === AlertType.Success) {
+      notification.success({
+        message: `Create Event Success`,
+        description: (
+          <>
+            Click{" "}
+            <a
+              href={data.webLink}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Here
+            </a>{" "}
+            to check your calendar
+          </>
+        ),
+        placement: "bottom",
+      });
+    } else {
+      notification.error({
+        message: `Create Event Fail`,
+        description: "",
+        placement: "bottom",
+      });
+    }
+  };
+
+  const onFinish = async (values: any) => {
+    setLoading(true);
+
+    const body = {
+      subject: values.subject,
+      start: {
+        dateTime: moment(values.date[0]).toISOString(),
+      },
+      end: {
+        dateTime: moment(values.date[1]).toISOString(),
+      },
+      attendees: values.attendee
+        ? values.attendee.map((item: any) => {
+            return item.email;
+          })
+        : [],
+    };
+    console.log("🐱  onFinish ~ body", body);
+
+    try {
+      const res = await axios.post(URL + "/api/events", body);
+      console.log("🐱 onFinish ~ res", res);
+
+      openNotification(AlertType.Success, res.data.data);
+
+      setLoading(false);
+    } catch (error) {
+      setLoading(false);
+
+      console.log("error", error);
+    }
   };
 
   return (
@@ -30,7 +103,11 @@ export default function Home() {
           label="Start Date - End Date"
           name="date"
         >
-          <RangePicker allowClear />
+          <RangePicker
+            allowClear
+            showTime
+            format="YYYY-MM-DD HH:mm:ss"
+          />
         </Form.Item>
         <Form.List name="attendee">
           {(fields, { add, remove }) => (
@@ -44,6 +121,7 @@ export default function Home() {
                   <Form.Item
                     {...restField}
                     name={[name, "email"]}
+                    rules={[{ type: "email" }]}
                   >
                     <Input
                       placeholder="Enter Email Here"
@@ -72,6 +150,7 @@ export default function Home() {
           <Button
             type="primary"
             htmlType="submit"
+            loading={loading}
           >
             Submit
           </Button>
