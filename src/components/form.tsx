@@ -78,6 +78,7 @@ export default function FormCreateEvent() {
       setLoading(false);
     } catch (error) {
       setLoading(false);
+      openNotification(AlertType.Fail);
 
       console.log("error", error);
     }
@@ -104,6 +105,7 @@ export default function FormCreateEvent() {
         <Form.Item
           label="Start Date - End Date"
           name="date"
+          rules={[{ required: true, message: "Date is required" }]}
         >
           <RangePicker
             allowClear
@@ -131,7 +133,7 @@ export default function FormCreateEvent() {
                   <Form.Item
                     {...restField}
                     name={[name, "email"]}
-                    rules={[{ type: "email" }]}
+                    rules={[{ type: "email", message: "Email is invalid" }]}
                   >
                     <Input
                       placeholder="Enter Email Here"
